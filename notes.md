@@ -99,8 +99,8 @@ window.reclaimInterceptor.on('response', async ({ requestId, response }) => {
 ```typescript
 const requestData = {
   url: '', // Endpoint URL from interceptor (not the page url - the internal api used by the website.) response.url
-  headers: { ...response.headers },
-  method: 'GET',
+  headers: { ...response.headers }, // from the interceptor
+  method: 'GET', // from the interceptor
   requestBody: '', // Empty for GET requests
   responseBody: 'response', // Use actual response for POST requests
   extractedParams: {
