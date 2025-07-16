@@ -113,7 +113,8 @@ const requestData = {
   geoLocation: window.payloadData.geoLocation,
   responseMatches: [
     {
-      type: 'contains', // imageing asking hey - does this contain the bankId?. you can also change this to regex type
+      type: 'contains', // think of it like does this include the bank ID?
+      //  You can also convert it to a regex format if needed
       invert: false,
       value: '{{bankId}}', // Match extractedParams key
     },
