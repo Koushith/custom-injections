@@ -114,15 +114,16 @@ const rd = {
 };
 ```
 
-# Final step after grabbing all values - To trigger the proof
+# Final step after grabbing all values - To trigger thhe proof pass the rd object to the callHandler (This is similar to post message - browser to app communication)
 
 ```js
-window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(rd));
+window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(rd)); // extractedData is the name of the event that the inapp sdk is listening to. this will trigger the proof generation.
 ```
 
 # Commonly used User Agents
 
 Android UA:
+
 Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36
 
 # FAQ
