@@ -1,20 +1,20 @@
-### Guide on how to write a custom js
+# Custom JavaScript Guide for Reclaim SDK
 
-# Flow
+## Overview
 
-As soon as the verification flow starts with InApp SDKs (Reclaim Verifier /AppClip), a webview is started. When Reclaim provider config is downloaded, the InApp sdk(used by the reclaim verifier app) builds a javascript code snippet from provider js injection. This javascript code is injected in every webpage page and runs when page loading starts.
+When the verification flow initiates with InApp SDKs (Reclaim Verifier/AppClip), a webview launches. Upon downloading the Reclaim provider config, the InApp SDK constructs and injects a JavaScript code snippet into every webpage during load time.
 
-To intercat with inapp sdks, few of the reclaim specifc objects are added to the window obejct.
-few of them are:
+## Global Objects
 
-```js
-window.payloadData; // contains the provider config
-window.reclaimInterceptor; // middleware to intercept the request and response
-window.flutter_inappwebview; // to send messages to and from the inapp sdk
-```
+The following Reclaim-specific objects are added to the window object for SDK interaction:
 
-```ts
-//payload
+```typescript
+// Available window objects
+window.payloadData; // Provider configuration
+window.reclaimInterceptor; // Request/Response middleware
+window.flutter_inappwebview; // SDK communication bridge
+
+// PayloadData Interface
 export interface PayloadData {
   name: string | null;
   description: string | null;
@@ -29,105 +29,119 @@ export interface PayloadData {
 }
 ```
 
-# There are few methods/middlewares that can be used to intercept the request and response before that lets us see the types of interceptors we have:
+## Interceptor Types
 
-# Injection types avaliable on the devtool and being used by inappsdk (verifier app)
+Available injection types for the devtool and InApp SDK:
 
-- HAWKEYE - default
-- MSWJS
-- XHOOK - deprocated- not used anymore
-- NONE - no interceptor
+- **HAWKEYE** (default)
+- **MSWJS**
+- **XHOOK** (deprecated)
+- **NONE** (no interception)
 
-depending on the injection type, we can use different methods to intercept the request and response.
+### HAWKEYE Interceptor
 
-# Injection type is HAWKEYE use below method to intercept the request
-
-```js
-/**
- * Expose the interceptor instance globally
- * This allows adding more middlewares from other scripts or the console
- *
- * This is for HAWAKEYE
- *
- * Usage examples:
- *
- *
- * */
-// Add a request middleware
+```typescript
+// Request middleware
 window.reclaimInterceptor.addRequestMiddleware(async (request) => {
-  console.log('request', request);
-  console.log('New request:', request.url);
+  console.log('Request:', request.url);
 });
 
-// Add a response middleware
+// Response middleware
 window.reclaimInterceptor.addResponseMiddleware(async (response, request) => {
-  console.log('New response:', response.body);
+  console.log('Response:', response.body);
 });
 ```
 
-# Injection type is MSWJS use below method to intercept the request
+### MSWJS Interceptor
 
-```js
+```typescript
 window.reclaimInterceptor.on('response', async ({ requestId, response }) => {
-  console.log('requestId', requestId);
-  console.log('response', response);
+  console.log('Request ID:', requestId);
+  console.log('Response:', response);
 });
 ```
 
-Tip : if you log the request and response - you will have all the information you need to extract the data.
+## Data Extraction Tips
 
-it can be method, url, headers, body, etc.
+- Log requests and responses to access method, URL, headers, body, etc.
+- Use DOM manipulation to extract data from HTML responses
+- Parse JSON responses directly
+- Reference examples in the `custom-js` folder
 
-now you can do a dom manipulation to extract the data you need.
-if the response is a json, you can parse it and extract the data you need.
+## Proof Generation Format
 
-if the response is a html, you can use a dom parser to extract the data you need.
-
-refere the examples attached in the custom-js folder.
-
-once you have the data, you can trigger the proof. our attostor accepts the data in the following format:
-
-```js
-const rd = {
-  url: '', // url of the endpoint -> you can grab it from the interceptor eg: request.url
+```typescript
+const requestData = {
+  url: '', // Endpoint URL from interceptor
   headers: { ...response.headers },
   method: 'GET',
-  requestBody: '', // since it is a get request, we don't have a request body
-  responseBody: 'response', // keep it as response. boilerplate stuff. if it is a post request, you can grab the body from the interceptor eg: response.body
+  requestBody: '', // Empty for GET requests
+  responseBody: 'response', // Use actual response for POST requests
   extractedParams: {
-    bankId: 1234, // values you get after parsing the response./ dom manipulation etc
+    bankId: 1234, // Values from response parsing
   },
   geoLocation: window.payloadData.geoLocation,
   responseMatches: [
     {
       type: 'contains',
       invert: false,
-      value: '{{bankId}}', // match the extractedParams key
+      value: '{{bankId}}', // Match extractedParams key
     },
   ],
   responseRedactions: [
     {
-      regex: '{{bankId}}', // match the extractedParams key
+      regex: '{{bankId}}', // Match extractedParams key
     },
   ],
-  witnessParameters: { ...window.payloadData.parameters }, //boilerplate stuff.
+  witnessParameters: { ...window.payloadData.parameters },
 };
 ```
 
-# Final step after grabbing all values - To trigger thhe proof pass the rd object to the callHandler (This is similar to post message - browser to app communication)
+## Triggering Proof Generation
 
-```js
-window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(rd)); // extractedData is the name of the event that the inapp sdk is listening to. this will trigger the proof generation.
+```typescript
+window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(requestData));
 ```
 
-# Commonly used User Agents
+## Verification Review Behavior
 
-Android UA:
+- Appears when webpage loading begins
+- Hides after 1-2 seconds if user login interaction is required
+- Persists during redirects within the 1-2 second window
+- Reappears for claim creation, errors, or proof generation events
+- Auto-hides after 10-20 seconds of inactivity
 
+## Troubleshooting
+
+### Website Compatibility Issues
+
+If a website works in the default browser but not with Reclaim InApp SDK:
+
+1. Try platform-specific user agents
+2. Set `disableRequestReplay` to `true`
+3. Disable injections by setting type to `NONE`
+   - Requires manual claim requests using `window.Reclaim.requestClaim`
+
+### Recommended User Agents
+
+**Android:**
+
+```
 Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36
+```
 
-# FAQ
+**iOS/iPadOS:**
 
-### Q. How long is this verification review shown and when?
+```
+Mozilla/5.0 (iPhone; CPU iPhone OS 17_0_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+```
 
-By default, it starts showing when web page loading starts. Hides when inapp sdk detects if the page requires user interaction for login after 1-2 seconds of page loading completion. If a redirection happens to another page between this 1-2 secs, then verification review banner is not hidden and still shown. Its shown again on events like claim creation, error or proof generation changes like completion happens. When nothing happens for 10-20 seconds, the verification review is removed and the webview screen becomes visible.
+```
+
+> Note: Additional user agents for different devices and platforms can be found online. The above examples work for most common scenarios.
+
+```
+
+```
+
+```
