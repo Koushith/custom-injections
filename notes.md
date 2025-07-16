@@ -1,4 +1,4 @@
-# Custom JavaScript Guide for Reclaim SDK
+# Custom JavaScript Guide for building Reclaim Providers
 
 ## Overview
 
@@ -12,7 +12,7 @@ The following Reclaim-specific objects are added to the window object for SDK in
 // Available window objects
 window.payloadData; // Provider configuration
 window.reclaimInterceptor; // Request/Response middleware
-window.flutter_inappwebview; // SDK communication bridge
+window.flutter_inappwebview; // communication bridge bw webview and reclaim sdk
 
 // PayloadData Interface
 export interface PayloadData {
@@ -94,6 +94,10 @@ window.reclaimInterceptor.on('response', async ({ requestId, response }) => {
 
 - use chatgpt for regex and dom manipulation. regex101 is also a good tool.
 
+if you are not using the safari debugger - one tirick is to set `alert(stringfy(response))` inside middlewares to see the response.
+
+This injection code will run on every page load. sometimes it will run even before the page is loaded. so wrap it inside `setInterval` to delay it. this will be running continuesly and will trigger the proof generation if request, response matches the criteria. refer `bank-of-china.js` example.
+
 ## Proof Generation Format
 
 ```typescript
@@ -109,10 +113,17 @@ const requestData = {
   geoLocation: window.payloadData.geoLocation,
   responseMatches: [
     {
-      type: 'contains',
+      type: 'contains', // imageing asking hey - does this contain the bankId?. you can also change this to regex type
       invert: false,
       value: '{{bankId}}', // Match extractedParams key
     },
+
+    // regex type example
+    // {
+    //   invert: false,
+    //   type: 'regex',
+    //   value: 'bankId":"(?<bankId>[^"]*)"', //  greedy match
+    // },
   ],
   responseRedactions: [
     {
@@ -157,8 +168,4 @@ Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome
 Mozilla/5.0 (iPhone; CPU iPhone OS 17_0_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
 ```
 
-```
-
-> Note: Additional user agents for different devices and platforms can be found online. The above examples work for most common scenarios.
-
-```
+Note: Additional user agents for different devices and platforms can be found online. The above examples work for most common scenarios.
