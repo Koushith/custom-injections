@@ -52,9 +52,17 @@
   processAndNavigate();
   let rdURL, rdMethod, rdBody, rdHeaders, rd1URL, rd1Method, rd1Body, rd1Headers;
   // Inject requestInterceptorOverride once on the analytics page
+
   const injectionInterval = setInterval(async () => {
     if (window.location.href.includes(analyticsPath)) {
+      // MSWJS method
+
+      // window.reclaimInterceptor.on('request', async ({ requestId, response }) => {
+      // }
+
       window.reclaimInterceptor.on('response', async ({ requestId, response }) => {
+        console.log('response', response);
+
         try {
           const request = window.allRequest.get(requestId);
           const url = request.url.startsWith('/') ? window.location.origin + request.url : request.url;
@@ -165,17 +173,9 @@
               witnessParameters: { ...window.payloadData.parameters },
             };
             window.injected = true;
-            window.flutter_inappwebview.callHandler('publicData', JSON.stringify({ data: rd1Body }));
-            window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(rd));
+            // window.flutter_inappwebview.callHandler('publicData', JSON.stringify({ data: rd1Body }));
+            window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(rd)); // witness call
           }
-
-          console.info({
-            url,
-            requestMethod,
-            headers,
-            requestBody,
-            responseText,
-          });
         } catch (e) {
           console.error(e);
         }
