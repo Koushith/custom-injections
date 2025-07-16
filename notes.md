@@ -29,37 +29,61 @@ export interface PayloadData {
 }
 ```
 
+to construst a js injection, we have few injections types available in the devtool.
+
 ## Interceptor Types
 
 Available injection types for the devtool and InApp SDK:
 
 - **HAWKEYE** (default)
 - **MSWJS**
-- **XHOOK** (deprecated)
-- **NONE** (no interception)
+- **XHOOK** (deprecated - not used anymore)
+- **NONE** (no interceptor)
 
-### HAWKEYE Interceptor
+### if you are using HAWKEYE, you can use the following code to add a request and response middleware.
 
-```typescript
-// Request middleware
+```javascript
+/**
+ * Expose the interceptor instance globally
+ * This allows adding more middlewares from other scripts or the console
+ *
+ * This is for HAWKEYE
+ */
+
+// Add a request middleware
 window.reclaimInterceptor.addRequestMiddleware(async (request) => {
-  console.log('Request:', request.url);
+  console.log('request', request);
+  console.log('New request:', request.url);
 });
 
-// Response middleware
+// Add a response middleware
 window.reclaimInterceptor.addResponseMiddleware(async (response, request) => {
-  console.log('Response:', response.body);
+  console.log('New response:', response.body);
 });
 ```
 
-### MSWJS Interceptor
+### if you are using MSWJS, you can use the following code to add a request and response middleware.
 
-```typescript
+```javascript
 window.reclaimInterceptor.on('response', async ({ requestId, response }) => {
-  console.log('Request ID:', requestId);
-  console.log('Response:', response);
+  console.log('requestId', requestId);
+  console.log('response', response);
 });
 ```
+
+### Working with Intercepted Data
+
+- If you log the request and response - you will have all the information you need to extract the data
+- You can access:
+  - method
+  - url
+  - headers
+  - body
+  - and more
+- For response handling:
+  - If the response is JSON, you can parse it directly
+  - If the response is HTML, you can use a DOM parser to extract the data
+- Refer to the examples in the custom-js folder for more details
 
 ## Data Extraction Tips
 
@@ -68,11 +92,13 @@ window.reclaimInterceptor.on('response', async ({ requestId, response }) => {
 - Parse JSON responses directly
 - Reference examples in the `custom-js` folder
 
+- use chatgpt for regex and dom manipulation. regex101 is also a good tool.
+
 ## Proof Generation Format
 
 ```typescript
 const requestData = {
-  url: '', // Endpoint URL from interceptor
+  url: '', // Endpoint URL from interceptor (not the page url - the internal api used by the website.) response.url
   headers: { ...response.headers },
   method: 'GET',
   requestBody: '', // Empty for GET requests
@@ -103,14 +129,6 @@ const requestData = {
 window.flutter_inappwebview.callHandler('extractedData', JSON.stringify(requestData));
 ```
 
-## Verification Review Behavior
-
-- Appears when webpage loading begins
-- Hides after 1-2 seconds if user login interaction is required
-- Persists during redirects within the 1-2 second window
-- Reappears for claim creation, errors, or proof generation events
-- Auto-hides after 10-20 seconds of inactivity
-
 ## Troubleshooting
 
 ### Website Compatibility Issues
@@ -120,9 +138,12 @@ If a website works in the default browser but not with Reclaim InApp SDK:
 1. Try platform-specific user agents
 2. Set `disableRequestReplay` to `true`
 3. Disable injections by setting type to `NONE`
-   - Requires manual claim requests using `window.Reclaim.requestClaim`
 
-### Recommended User Agents
+![alt text](./screenshots/provider-config1.png)
+![alt text](./screenshots/provider-config2.png)
+![alt text](./screenshots/provider-config3.png)
+
+### Recommended User Agents - use only if the website is not working with the default user agent.
 
 **Android:**
 
@@ -139,9 +160,5 @@ Mozilla/5.0 (iPhone; CPU iPhone OS 17_0_2 like Mac OS X) AppleWebKit/605.1.15 (K
 ```
 
 > Note: Additional user agents for different devices and platforms can be found online. The above examples work for most common scenarios.
-
-```
-
-```
 
 ```
